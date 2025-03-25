@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日點餐統計</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; }
+        input, select, button { margin: 5px 0; padding: 8px; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f4f4f4; }
+    </style>
+</head>
+<body>
+
+    <h2>每日點餐統計</h2>
+    <label>姓名：</label>
+    <input type="text" id="nameInput" placeholder="輸入你的名字">
+    
+    <label>今日餐點：</label>
+    <select id="foodSelect">
+        <option value="">請選擇餐點</option>
+    </select>
+
+    <button onclick="addOrder()">提交訂單</button>
+    <button onclick="clearOrders()" style="background-color: red; color: white;">清空訂單</button>
+
+    <h3>訂單列表</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>姓名</th>
+                <th>餐點</th>
+            </tr>
+        </thead>
+        <tbody id="orderList"></tbody>
+    </table>
+
+    <h3>餐點統計</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>餐點</th>
+                <th>數量</th>
+            </tr>
+        </thead>
+        <tbody id="foodSummary"></tbody>
+    </table>
+
+    <script>
+        let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+        // **📌 菜單設定**
+        const menu = {
+            "2025-03-24": ["青醬時蔬炒魚片", "豆醬時蔬燴炒雞丁", "日嚐小菜", "季節時蔬"],
+            "2025-03-25": ["番茄咖哩雞腿", "客家小炒", "日嚐小菜", "季節時蔬"],
+            "2025-03-26": ["鮮蝦粉絲豆腐煲", "桂竹筍炒肉絲", "日嚐小菜", "季節時蔬"],
+            "2025-03-27": ["東坡肉", "青花菜菇菇炒雞柳", "日嚐小菜", "季節時蔬"],
+            "2025-03-28": ["豆鼓菜排骨", "剝皮辣椒豆干炒肉末", "日嚐小菜", "季節時蔬"]
+        };
+
+        // **📌 自動設定今天的菜單**
+        function setTodayMenu() {
+            let today = new Date().toISOString().split('T')[0]; // 取得 YYYY-MM-DD 格式
+            let foodSelect = document.getElementById("foodSelect");
+            foodSelect.innerHTML = `<option value="">請選擇餐點</option>`; // 清空選單
+
+            if (menu[today]) {
+                menu[today].forEach(food => {
+                    let option = document.createElement("option");
+                    option.value = food;
+                    option.textContent = food;
+                    foodSelect.appendChild(option);
+                });
+            } else {
+                let option = document.createElement("option");
+                option.value = "今日無菜單";
+                option.textContent = "今日無菜單";
+                foodSelect.appendChild(option);
+            }
+        }
+
+        function addOrder() {
+            let name = document.getElementById('nameInput').value.trim();
+            let food = document.getElementById('foodSelect').value;
+            if (!name || !food) {
+                alert("請輸入姓名並選擇餐點！");
+                return;
+            }
+
+            orders.push({ name, food });
+            localStorage.setItem('orders', JSON.stringify(orders));
+
+            document.getElementById('nameInput').value = "";
+            document.getElementById('foodSelect').value = "";
+
+            updateDisplay();
+        }
+
+        function updateDisplay() {
+            let orderList = document.getElementById('orderList');
+            let foodSummary = document.getElementById('foodSummary');
+            orderList.innerHTML = "";
+            foodSummary.innerHTML = "";
+
+            let foodCount = {};
+            orders.forEach(order => {
+                orderList.innerHTML += `<tr><td>${order.name}</td><td>${order.food}</td></tr>`;
+                foodCount[order.food] = (foodCount[order.food] || 0) + 1;
+            });
+
+            for (let food in foodCount) {
+                foodSummary.innerHTML += `<tr><td>${food}</td><td>${foodCount[food]}</td></tr>`;
+            }
+        }
+
+        function clearOrders() {
+            if (confirm("確定要清空所有訂單嗎？")) {
+                orders = [];
+                localStorage.removeItem('orders');
+                updateDisplay();
+            }
+        }
+
+        // 初始化
+        setTodayMenu();
+        updateDisplay();
+    </script>
+
+</body>
+</html>
